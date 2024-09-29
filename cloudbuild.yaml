@@ -13,5 +13,4 @@ images:
   -  'asia-northeast1-docker.pkg.dev/$PROJECT_ID/my-repo2/cloud-run-samples:$COMMIT_SHA'
 
 options:
-  logging: CLOUD_LOGGING_ONLY
-logsBucket: gs://cloud-run-jobs-samples
+  defaultLogsBucketBehavior: REGIONAL_USER_OWNED_BUCKET
