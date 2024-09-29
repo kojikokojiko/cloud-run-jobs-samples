@@ -14,6 +14,3 @@ images:
 
 options:
   defaultLogsBucketBehavior: REGIONAL_USER_OWNED_BUCKET
-
-  # ビルドのリージョンを指定
-region: asia-northeast1
