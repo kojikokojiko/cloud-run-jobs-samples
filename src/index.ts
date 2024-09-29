@@ -1,7 +1,9 @@
 // src/fetchRSSFeed.ts
 import fetch from 'node-fetch';
-import { JSDOM } from 'jsdom';
+import * as cheerio from 'cheerio';
 import { PrismaClient } from '@prisma/client';
+console.log('Environment variables:', process.env);
+console.log('DATABASE_URL:', process.env.DATABASE_URL);
 
 const prisma = new PrismaClient();
 
@@ -15,15 +17,11 @@ const fetchOGPData = async (url: string): Promise<OGPData> => {
     if (!response.ok) throw new Error(`Error fetching URL: ${response.statusText}`);
 
     const html = await response.text();
-    const dom = new JSDOM(html);
-    const document = dom.window.document;
+    const $ = cheerio.load(html);
+    
+    const ogImage = $("meta[property='og:image']").attr('content') || null;
 
-    const getMetaContent = (property: string): string | null => {
-      const element = document.querySelector(`meta[property='${property}']`);
-      return element ? element.getAttribute('content') : null;
-    };
-
-    return { ogImage: getMetaContent('og:image') };
+    return { ogImage };
   } catch (error) {
     console.error(`Error fetching OGP data for ${url}:`, error);
     return { ogImage: null };
@@ -43,28 +41,27 @@ const fetchRSSFeed = async () => {
     if (!response.ok) throw new Error(`Error fetching RSS feed: ${response.statusText}`);
 
     const xmlText = await response.text();
-    const dom = new JSDOM(xmlText, { contentType: 'text/xml' });
-    const document = dom.window.document;
-
+    const $ = cheerio.load(xmlText, { xmlMode: true });
+    
     const items = await Promise.all(
-      Array.from(document.querySelectorAll(media.item_selector)).map(async (item) => {
-        const title = item.querySelector(media.item_title_selector)?.textContent || '';
-        const link = item.querySelector(media.item_link_selector)?.textContent || '';
-        const description = item.querySelector(media.item_desc_selector)?.textContent || '';
-        const pubDate = item.querySelector(media.item_pubdate_selector)?.textContent || '';
+      $(media.item_selector).map(async (i, item) => {
+        const title = $(item).find(media.item_title_selector).text() || '';
+        const link = $(item).find(media.item_link_selector).text() || '';
+        const description = $(item).find(media.item_desc_selector).text() || '';
+        const pubDate = $(item).find(media.item_pubdate_selector).text() || '';
 
         const ogpData = link ? await fetchOGPData(link) : { ogImage: null };
 
         return { title, link, description, pubDate, ...ogpData };
-      })
+      }).get()
     );
 
     const feed = {
       mediaId: media.id,
       feed: {
-        title: document.querySelector(media.feed_title_selector)?.textContent || 'No title',
-        description: document.querySelector(media.feed_desc_selector)?.textContent || 'No description',
-        lastUpdated: document.querySelector(media.feed_last_updated_selector)?.textContent || 'No date',
+        title: $(media.feed_title_selector).text() || 'No title',
+        description: $(media.feed_desc_selector).text() || 'No description',
+        lastUpdated: $(media.feed_last_updated_selector).text() || 'No date',
       },
       items,
     };
