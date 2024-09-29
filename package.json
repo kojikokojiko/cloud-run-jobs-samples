@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "dependencies": {
+    "@prisma/client": "^5.20.0",
     "@types/node": "^22.7.4",
     "acorn": "^8.12.1",
     "acorn-walk": "^8.3.4",
@@ -22,5 +23,9 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": ""
+  "description": "",
+  "devDependencies": {
+    "@types/jsdom": "^21.1.7",
+    "@types/node-fetch": "^2.6.11"
+  }
 }
