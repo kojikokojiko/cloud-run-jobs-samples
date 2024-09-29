@@ -1,4 +1,3 @@
-# Stage 1: Build the TypeScript code
 FROM node:22-alpine AS builder
 
 WORKDIR /app
@@ -11,7 +10,6 @@ COPY src ./src
 
 RUN npx tsc
 
-# Stage 2: Create the runtime image
 FROM node:22-alpine
 
 WORKDIR /app
@@ -21,4 +19,8 @@ RUN npm install --omit=dev
 
 COPY --from=builder /app/dist ./dist
 
-CMD ["node", "dist/index.js"]
+# エントリポイントスクリプトをコピーし、実行可能にする
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+CMD ["/usr/local/bin/docker-entrypoint.sh"]
